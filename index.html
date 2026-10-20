@@ -230,6 +230,16 @@ summary{cursor:pointer;font-weight:600;color:#8a2442}
 .fields textarea{min-height:150px;resize:vertical}
 .fields small{color:var(--muted);font-size:12px}
 
+/* ===== hộp thoại demo bấm xem được ===== */
+.item{cursor:pointer;transition:background .2s}
+.item:hover:not(.on){background:#f9eef2}
+.msg .who{font-size:11px;color:#9a8c92;margin:0 0 2px 10px}
+.file{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:14px;background:#fff;border:1px solid #f3d6de;color:var(--ink);font-size:13.5px}
+.file .fi{flex:none;width:34px;height:40px;border-radius:6px;color:#fff;font:800 9px var(--f-body);display:grid;place-items:end center;padding-bottom:6px}
+.photo{width:230px;max-width:100%;border-radius:14px;overflow:hidden;background:#fff;border:1px solid #f3d6de}
+.photo svg{display:block;width:100%;height:auto}
+.photo small{display:block;padding:6px 10px;font-size:12px;color:#7a6169}
+
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.15s!important}}
 
 /* các bé thú bông */
@@ -326,6 +336,8 @@ summary{cursor:pointer;font-weight:600;color:#8a2442}
     </div>
     <div class="ph-body" id="body"></div>
     <div class="ph-foot" id="foot"><div class="ph">Nhắn tin…</div></div>
+    <div class="ph-body" id="body2" hidden></div>
+    <div class="ph-foot" id="foot2" hidden><div class="ph">Nhắn tin…</div></div>
 
     <div class="notice" id="notice" hidden>
       <span class="bell" aria-hidden="true">💌</span>
@@ -408,14 +420,74 @@ Cảm ơn em vì đã cho anh cơ hội hiểu em nhiều hơn. Mong là mỗi n
   const CUP=`<span class="ic cup" aria-label="tách cà phê"><svg viewBox="0 0 32 30" aria-hidden="true"><defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9fb7"/><stop offset="1" stop-color="#d43c66"/></linearGradient></defs><path class="st" d="M11 9c-2-2 1-3.5-1-6"/><path class="st s2" d="M16 9c-2-2 1-3.5-1-6"/><path class="st s3" d="M21 9c-2-2 1-3.5-1-6"/><path d="M5 12h19v5.5C24 22.2 20.4 26 16 26h-3c-4.4 0-8-3.8-8-8.5z" fill="url(#cg)"/><path d="M24 14h1.6a3.4 3.4 0 010 6.8H23.6" fill="none" stroke="#d43c66" stroke-width="2.2"/><path d="M3 27.5h24" stroke="#e98aa3" stroke-width="2.2" stroke-linecap="round"/><path d="M9.5 18.6c1.1-1.2 2.6-1.2 3.4 0 .8-1.2 2.3-1.2 3.4 0 .2 1.6-3.4 3.6-3.4 3.6s-3.6-2-3.4-3.6z" fill="#fff" opacity=".9"/></svg></span>`;
   const LETTER=`<span class="ic env2" aria-label="lá thư"><svg viewBox="0 0 32 30" aria-hidden="true"><defs><linearGradient id="eg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd0db"/><stop offset="1" stop-color="#f29ab0"/></linearGradient></defs><path class="lh" d="M16 13.5c-3.6-2.5-5-4.4-5-6.3 0-1.6 1.2-2.8 2.7-2.8.9 0 1.7.5 2.3 1.2.6-.7 1.4-1.2 2.3-1.2 1.5 0 2.7 1.2 2.7 2.8 0 1.9-1.4 3.8-5 6.3z" fill="#d43c66"/><rect x="3" y="10" width="26" height="17" rx="3" fill="url(#eg)"/><path d="M4 11.5l12 9 12-9" fill="none" stroke="#d43c66" stroke-width="2" stroke-linejoin="round"/></svg></span>`;
 
+  /* chat đang xem: 'main' hoặc khoá trong CH */
+  let cur='main';
+
   function syncNames(){
     document.querySelectorAll('.rname').forEach(e=>e.textContent=R());
     document.querySelectorAll('.sn').forEach(e=>e.textContent=S());
     const parts=S().split(/\s+/);
-    document.querySelectorAll('.av-s').forEach(e=>e.textContent=(parts[parts.length-1]||'♥').charAt(0).toUpperCase());
-    $('#hname').textContent=S();$('#hav').className='av';$('#hav').textContent=(parts[parts.length-1]||'♥').charAt(0).toUpperCase();$('#stat').textContent='Đang hoạt động';
+    const ini=(parts[parts.length-1]||'♥').charAt(0).toUpperCase();
+    document.querySelectorAll('.av-s').forEach(e=>e.textContent=ini);
+    if(cur==='main'){$('#hname').textContent=S();$('#hav').className='av';$('#hav').textContent=ini;$('#stat').textContent='Đang hoạt động';}
   }
   [F.r,F.s].forEach(i=>i.addEventListener('input',syncNames));
+
+  /* ===== các cuộc trò chuyện demo: bấm vào danh sách để đọc ===== */
+  const HUE=`<div class="photo"><svg viewBox="0 0 230 140" aria-hidden="true"><defs><linearGradient id="sky2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc7a8"/><stop offset=".55" stop-color="#fb9fa8"/><stop offset="1" stop-color="#9a7bb8"/></linearGradient></defs><rect width="230" height="140" fill="url(#sky2)"/><circle cx="168" cy="62" r="16" fill="#ffe2b8" opacity=".9"/><rect y="92" width="230" height="48" fill="#7d6aa6" opacity=".55"/><g fill="none" stroke="#fff6f0" stroke-width="3" opacity=".9"><path d="M5 92 Q24 74 43 92 Q62 74 81 92 Q100 74 119 92 Q138 74 157 92 Q176 74 195 92 Q214 74 225 86"/><path d="M0 92 H230"/></g><g stroke="#fff6f0" stroke-width="1.2" opacity=".35"><path d="M20 108h40M90 116h50M160 106h45"/></g></svg><small>cầu Tràng Tiền, Huế.jpg</small></div>`;
+  const FILE=(n,t,c)=>`<div class="file"><span class="fi" style="background:${c}">${t}</span><span>${n}</span></div>`;
+  /* 't' = người kia · 'me' = Chi (bên phải) · phần tử thứ 3 = 1 nếu là file/ảnh (HTML thô) */
+  const CH={
+    tien:{n:'[UMP] Chị Tiên - P.ĐT',a:'T',g:'g8',st:'Truy cập 10 phút trước',m:[
+      ['t','Chi ơi, dạo này công việc nhiều hả em?'],['me','Dạ, đợt này việc dồn dập quá chị ạ 😅'],
+      ['t','Nhớ ăn uống đầy đủ, đừng thức khuya quá nha'],['me','Dạ em nhớ rồi ạ, chị cũng giữ sức khỏe nha'],
+      ['t','Cố lên nha, chị tin em làm tốt mà. Xong đợt này chị em mình đi ăn một bữa nhé 🎉'],['me','Dạ vâng ạ, em hóng lắm luôn 🥰']]},
+    group5:{n:'5 chị em ĐH-UMP',a:'5',g:'g9',st:'5 thành viên',grp:1,m:[
+      ['Chị Tiên','Các bà ơi có ai còn sống không 🙋‍♀️'],['Chị Hạnh','Còn thoi thóp nè 😵'],
+      ['Chị VNga','Sáng giờ họp 3 cuộc liền, đầu như cái nồi'],['Chị Loan','Tui mới chạy xong đống hồ sơ, giờ mới được uống ngụm nước'],
+      ['me','Em cũng vừa ngẩng đầu lên khỏi màn hình đây ạ 😂'],['Chị Tiên','Hôm nay 20/10 mà sao ai cũng như đi chiến trận vậy trời'],
+      ['Chị Hạnh','20/10 của tui là deadline với deadline 🥲'],['Chị VNga','Haha y chang luôn'],
+      ['Chị Loan','Mà nghe nói căng tin hôm nay có chè khúc bạch đó'],['Chị Tiên','Thật hả, để chiều tui ghé'],
+      ['me','Chị mua giúp em một cốc với ạ 🥺'],['Chị Tiên','Ok em, chị mua 5 cốc luôn, mỗi người một cốc'],
+      ['Chị Hạnh','Chị Tiên chu đáo quá trời 😍'],['Chị VNga','Thôi tối nay đi đâu xả stress đi các chị ơi'],
+      ['Chị Loan','Đi trà sữa hông, quán mới mở gần trường đó 🧋'],['Chị Hạnh','Tui đi, nhưng 8h mới xong việc nha'],
+      ['Chị Tiên','Vậy hẹn 8h15 nhé, ai đến trước giữ bàn giúp cả nhóm 😄'],['Chị VNga','Để tui gọi đặt bàn trước cho, quán đó tối đông lắm'],
+      ['Chị Loan','Chị VNga chu đáo ghê, vậy tối nay mình đi chill thôi 🥰'],['me','Em đăng ký một suất nha các chị, tối nay vui rồi 🙋‍♀️']]},
+    dh:{n:'Đại học & Sau Đại học',a:'ĐH',g:'g1',st:'24 thành viên',grp:1,m:[
+      ['Phòng ĐT','📢 Thông báo: họp giao ban tuần này chuyển sang 8h sáng mai, phòng họp tầng 3'],
+      ['Chị Lan','Có cần mang báo cáo không ạ?'],['Phòng ĐT','Mọi người mang bản in báo cáo tháng nhé'],
+      ['Anh Tuấn','Tầng 3 hay tầng 4 ạ, tháng trước mình họp tầng 4'],['Phòng ĐT','Tầng 3 nhé, tầng 4 đang sửa máy chiếu'],
+      ['Phòng ĐT','Mai họp lúc 8h nha mọi người'],['me','Dạ em nhận thông tin ạ']]},
+    btk:{n:'Ban Thư Ký',a:'TK',g:'g4',st:'5 thành viên',grp:1,m:[
+      ['Chị Loan','Chi ơi, biên bản họp hôm trước em còn giữ không?'],['me','Dạ em còn ạ, để em tìm lại'],
+      ['Chị Loan','Bản có chữ ký đầy đủ nha em, chị cần nộp lên trên'],['Chị VNga','Tiện gửi chị file danh sách đại biểu luôn nhé'],
+      ['me','Dạ em gửi cả hai file vào nhóm luôn ạ'],
+      ['me',FILE('Biên bản họp.pdf','PDF','#e5677f'),1],['me',FILE('Danh sách đại biểu.xlsx','XLS','#4fa874'),1],
+      ['Chị Loan','Chị nhận rồi, cảm ơn em nha'],['Chị Hạnh','Chi làm việc nhanh ghê 👍'],
+      ['Chị Tiên','Nhóm mình có Chi đỡ biết bao nhiêu 😄'],['me','Dạ, có gì các chị cứ nhắn em nhé']]},
+    hanh:{n:'[UMP] Chị Hạnh - P. Đào Tạo',a:'H',g:'g5',st:'Truy cập 2 giờ trước',m:[
+      ['t','Chi ơi, chị vừa cập nhật lịch thi sinh viên học kỳ này lên nhóm rồi đó'],['t','Em xem lại giúp chị các ca thi thứ Năm nha'],
+      ['me','Dạ để em xem ạ'],['me','Thứ Năm có 2 ca thi buổi chiều mà phòng 301 bị trùng lịch chị ạ'],
+      ['t','Ừ đúng rồi, để chị chuyển ca sau sang phòng 305'],['me','Dạ vâng, em cập nhật lại danh sách phòng thi luôn ạ']]},
+    me:{n:'Mẹ',a:'M',g:'g2',st:'Truy cập 3 giờ trước',m:[
+      ['t','Con ơi dạo này ăn uống đầy đủ không?'],['me','Dạ có ạ, mẹ yên tâm nha'],
+      ['t','Trời trở lạnh rồi, nhớ mặc ấm vào con'],['t','Cuối tuần về ăn cơm nhé, mẹ nấu cá kho cho'],
+      ['me','Dạ vâng mẹ ạ, cuối tuần con về với mẹ 🥰']]},
+    vnga:{n:'[UMP] Chị VNga - P.ĐT',a:'N',g:'g6',st:'Truy cập 5 giờ trước',m:[
+      ['me','Chị ơi em xin file danh sách học viên với ạ'],['t','Đợi chị xíu nhé, chị đang họp'],
+      ['t',FILE('Danh sách học viên K32.xlsx','XLS','#4fa874'),1],
+      ['t','Chị gửi rồi đó, em kiểm tra giúp chị cột email nha'],['me','Dạ em nhận được rồi, em cảm ơn chị ạ']]},
+    hien:{n:'[UMP] Cô Hiền - P.ĐT',a:'H',g:'g7',st:'Truy cập 6 giờ trước',m:[
+      ['me','Em chào cô ạ, em đã nộp hồ sơ qua email rồi ạ'],['t','Cô nhận được hồ sơ của em rồi nhé'],
+      ['t','Bản này đầy đủ rồi, em không cần bổ sung gì thêm đâu'],['me','Dạ em cảm ơn cô ạ']]},
+    loan:{n:'[UMP] Chị Loan - P.ĐT',a:'L',g:'g10',st:'Truy cập 8 giờ trước',m:[
+      ['t','Chi ơi, em gửi chị bản tổng hợp số liệu tháng này với'],['me','Dạ em gửi qua email rồi chị ạ'],
+      ['t','Chị kiểm tra thấy rồi nhé em'],['t','Trưa nay đi ăn bánh canh đi'],
+      ['me','Dạ có ạ, 11h30 chị em mình xuất phát nhé chị']]},
+    cloud:{n:'Cloud của tôi',a:'☁',g:'g3',st:'Lưu trữ cá nhân',m:[
+      ['me','Việc tuần này: nộp báo cáo tháng, họp giao ban thứ Hai, mua quà cho mẹ'],
+      ['me','Lưu lại, lần sau đi Huế nữa 🥰'],['me',HUE,1]]}
+  };
 
   const body=$('#body'),foot=$('#foot');
   let timers=[],otimers=[];
@@ -424,6 +496,30 @@ Cảm ơn em vì đã cho anh cơ hội hiểu em nhiều hơn. Mong là mỗi n
   const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const scrollEnd=()=>{body.scrollTop=body.scrollHeight;};
   const PH='<div class="ph">Nhắn tin…</div>';
+  let waiting=false;
+
+  function openChat(k){
+    if(k===cur)return;
+    if($('#ov').classList.contains('on'))return;      /* đang đọc thư thì không chuyển */
+    if(document.querySelector('.boom'))return;        /* đang mở quà thì không chuyển */
+    cur=k;
+    document.querySelectorAll('.item').forEach(i=>i.classList.toggle('on',i.dataset.c===k));
+    const main=k==='main';
+    $('#body').hidden=!main;$('#foot').hidden=!main;$('#body2').hidden=main;$('#foot2').hidden=main;
+    $('#notice').hidden=!(main&&waiting);
+    if(main){syncNames();body.style.scrollBehavior='auto';scrollEnd();body.style.scrollBehavior='';return;}
+    const c=CH[k];
+    $('#hname').textContent=c.n;$('#hav').className='av '+c.g;$('#hav').textContent=c.a;$('#stat').textContent=c.st;
+    const b2=$('#body2');b2.innerHTML='<div class="day">Hôm nay</div>';
+    c.m.forEach(([w,t,raw])=>{
+      const d=document.createElement('div'),mine=w==='me';
+      d.className='msg '+(mine?'her':'me');
+      d.innerHTML=(c.grp&&!mine?`<div class="who">${esc(w)}</div>`:'')+`<div class="bub${raw?' vc':''}">${raw?t:esc(t)}</div>`;
+      b2.appendChild(d);
+    });
+    b2.style.scrollBehavior='auto';b2.scrollTop=b2.scrollHeight;
+  }
+  document.querySelectorAll('.item').forEach(i=>i.addEventListener('click',()=>openChat(i.dataset.c)));
 
   function add(cls,html,time){
     const d=document.createElement('div');d.className='msg '+cls;
@@ -657,6 +753,7 @@ Cảm ơn em vì đã cho anh cơ hội hiểu em nhiều hơn. Mong là mỗi n
   }
 
   function reset(){
+    openChat('main');   /* luôn quay về chat chính khi xem lại */
     timers.forEach(clearTimeout);timers=[];otimers.forEach(clearTimeout);otimers=[];
     stage=0;qi=0;close.textContent=GIFT_TXT;close.classList.add('gift');
     document.querySelectorAll('.boom').forEach(e=>e.remove());
@@ -669,12 +766,11 @@ Cảm ơn em vì đã cho anh cơ hội hiểu em nhiều hơn. Mong là mỗi n
 
   /* trạng thái chờ */
   const notice=$('#notice'),badge=$('#badge'),mainItem=$('#mainItem');
-  let waiting=false;
   function showUnread(){
     waiting=true;
     body.innerHTML='<div class="day">Hôm nay</div>';
     $('#prev').textContent='Đã gửi cho bạn 1 tin nhắn';
-    badge.hidden=false;mainItem.classList.add('new');notice.hidden=false;
+    badge.hidden=false;mainItem.classList.add('new');notice.hidden=(cur!=='main');
   }
   function startChat(){
     if(!waiting)return;waiting=false;
